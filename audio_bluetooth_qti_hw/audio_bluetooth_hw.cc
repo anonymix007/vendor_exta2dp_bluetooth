@@ -25,6 +25,9 @@
 #include "stream_apis.h"
 #include "utils.h"
 
+extern "C" binder_status_t createIBluetoothAudioProviderFactory();
+extern "C" bool isIBluetoothAudioProviderFactoryAvailable();
+
 using ::android::bluetooth::audio::utils::GetAudioParamString;
 using ::android::bluetooth::audio::utils::ParseAudioParams;
 
@@ -171,6 +174,13 @@ static int adev_open(const hw_module_t* module, const char* name,
                      hw_device_t** device) {
   LOG(VERBOSE) << __func__ << ": name=[" << name << "]";
   if (strcmp(name, AUDIO_HARDWARE_INTERFACE) != 0) return -EINVAL;
+
+  createIBluetoothAudioProviderFactory();
+
+  if (!isIBluetoothAudioProviderFactoryAvailable()) {
+    LOG(ERROR) << __func__ << ": IBluetoothAudioProviderFactory is not available";
+    return -ENXIO;
+  }
 
   auto bluetooth_audio_device = new BluetoothAudioDevice{};
   struct audio_hw_device* adev = &bluetooth_audio_device->audio_device_;
