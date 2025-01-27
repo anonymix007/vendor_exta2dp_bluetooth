@@ -21,6 +21,9 @@
 #include <aidl/android/hardware/bluetooth/audio/AacCapabilities.h>
 #include <aidl/android/hardware/bluetooth/audio/AacObjectType.h>
 #include <aidl/android/hardware/bluetooth/audio/AptxCapabilities.h>
+#include <aidl/android/hardware/bluetooth/audio/AptxAdaptiveCapabilities.h>
+#include <aidl/android/hardware/bluetooth/audio/AptxSinkBuffering.h>
+#include <aidl/android/hardware/bluetooth/audio/AptxAdaptiveTimeToPlay.h>
 #include <aidl/android/hardware/bluetooth/audio/ChannelMode.h>
 #include <aidl/android/hardware/bluetooth/audio/LdacCapabilities.h>
 #include <aidl/android/hardware/bluetooth/audio/LdacChannelMode.h>
@@ -57,7 +60,7 @@ static const SbcCapabilities kDefaultOffloadSbcCapability = {
     .allocMethod = {SbcAllocMethod::ALLOC_MD_L},
     .bitsPerSample = {16},
     .minBitpool = 2,
-    .maxBitpool = 53};
+    .maxBitpool = 250};
 
 static const AacCapabilities kDefaultOffloadAacCapability = {
     .objectType = {AacObjectType::MPEG2_LC},
@@ -69,8 +72,8 @@ static const AacCapabilities kDefaultOffloadAacCapability = {
 static const LdacCapabilities kDefaultOffloadLdacCapability = {
     .sampleRateHz = {44100, 48000, 88200, 96000},
     .channelMode = {LdacChannelMode::DUAL, LdacChannelMode::STEREO},
-    .qualityIndex = {LdacQualityIndex::HIGH, LdacQualityIndex::MID,
-                     LdacQualityIndex::LOW, LdacQualityIndex::ABR},
+    .qualityIndex = {LdacQualityIndex::HIGH, LdacQualityIndex::ABR,
+                     LdacQualityIndex::MID, LdacQualityIndex::LOW},
     .bitsPerSample = {16, 24, 32}};
 
 static const AptxCapabilities kDefaultOffloadAptxCapability = {
@@ -82,7 +85,7 @@ static const AptxCapabilities kDefaultOffloadAptxCapability = {
 static const AptxCapabilities kDefaultOffloadAptxHdCapability = {
     .sampleRateHz = {44100, 48000},
     .channelMode = {ChannelMode::STEREO},
-    .bitsPerSample = {16, 24},
+    .bitsPerSample = {24},
 };
 
 static const OpusCapabilities kDefaultOffloadOpusCapability = {
@@ -91,12 +94,40 @@ static const OpusCapabilities kDefaultOffloadOpusCapability = {
     .channelMode = {ChannelMode::MONO, ChannelMode::STEREO},
 };
 
+static const AptxSinkBuffering kDefaultAptxAdaptiveSinkBuffering = {
+    .minLowLatency = 20,
+    .maxLowLatency = 50,
+    .minHighQuality = 20,
+    .maxHighQuality = 50,
+    .minTws = 20,
+    .maxTws = 50,
+};
+
+static const AptxAdaptiveTimeToPlay  kDefaultAptxAdaptive_TTP = {
+    .lowLowLatency = 69,
+    .highLowLatency = 69,
+    .lowHighQuality = 100,
+    .highHighQuality = 100,
+    .lowTws = 100,
+    .highTws = 100,
+};
+
+static const AptxAdaptiveCapabilities kDefaultOffloadAptxAdaptiveCapability = {
+    .sampleRateHz = {44100, 48000, 96000},
+    .channelMode = {AptxAdaptiveChannelMode::DUAL_MONO, AptxAdaptiveChannelMode::JOINT_STEREO},
+    .bitsPerSample = {24},
+    .aptxMode = {AptxMode::HIGH_QUALITY},
+    .sinkBufferingMs = kDefaultAptxAdaptiveSinkBuffering,
+    .ttp = kDefaultAptxAdaptive_TTP,
+};
+
 const std::vector<CodecCapabilities> kDefaultOffloadA2dpCodecCapabilities = {
     {.codecType = CodecType::SBC, .capabilities = {}},
     {.codecType = CodecType::AAC, .capabilities = {}},
     {.codecType = CodecType::LDAC, .capabilities = {}},
     {.codecType = CodecType::APTX, .capabilities = {}},
     {.codecType = CodecType::APTX_HD, .capabilities = {}},
+    {.codecType = CodecType::APTX_ADAPTIVE, .capabilities = {}},
     {.codecType = CodecType::OPUS, .capabilities = {}}};
 
 std::vector<LeAudioCodecCapabilitiesSetting> kDefaultOffloadLeAudioCapabilities;
@@ -268,6 +299,29 @@ bool BluetoothAudioCodecs::IsOffloadOpusConfigurationValid(
   return false;
 }
 
+bool BluetoothAudioCodecs::IsOffloadAptxAdaptiveConfigurationValid(
+    const CodecConfiguration::CodecSpecific& codec_specific) {
+  if (codec_specific.getTag() !=
+     CodecConfiguration::CodecSpecific::aptxAdaptiveConfig) {
+    LOG(WARNING) << __func__
+                 << ": Invalid CodecSpecific=" << codec_specific.toString();
+    return false;
+  }
+  const AptxAdaptiveConfiguration aptxAdaptive_data =
+      codec_specific.get<CodecConfiguration::CodecSpecific::aptxAdaptiveConfig>();
+  if (ContainedInVector(kDefaultOffloadAptxAdaptiveCapability.sampleRateHz,
+                        aptxAdaptive_data.sampleRateHz) &&
+      ContainedInVector(kDefaultOffloadAptxAdaptiveCapability.bitsPerSample,
+                        aptxAdaptive_data.bitsPerSample) &&
+      ContainedInVector(kDefaultOffloadAptxAdaptiveCapability.channelMode,
+                        aptxAdaptive_data.channelMode)) {
+    return true;
+  }
+  LOG(WARNING) << __func__
+               << ": Unsupported CodecSpecific=" << codec_specific.toString();
+  return false;
+}
+
 std::vector<PcmCapabilities>
 BluetoothAudioCodecs::GetSoftwarePcmCapabilities() {
   return {kDefaultSoftwarePcmCapabilities};
@@ -314,10 +368,14 @@ BluetoothAudioCodecs::GetA2dpOffloadCodecCapabilities(
             .set<CodecCapabilities::Capabilities::opusCapabilities>(
                 kDefaultOffloadOpusCapability);
         break;
+      case CodecType::APTX_ADAPTIVE:
+        codec_capability.capabilities
+            .set<CodecCapabilities::Capabilities::aptxAdaptiveCapabilities>(
+                kDefaultOffloadAptxAdaptiveCapability);
+        break;
       case CodecType::UNKNOWN:
       case CodecType::VENDOR:
       case CodecType::LC3:
-      case CodecType::APTX_ADAPTIVE:
       case CodecType::APTX_ADAPTIVE_LE:
       case CodecType::APTX_ADAPTIVE_LEX:
         break;
@@ -385,6 +443,10 @@ bool BluetoothAudioCodecs::IsOffloadCodecConfigurationValid(
       }
       break;
     case CodecType::APTX_ADAPTIVE:
+      if (IsOffloadAptxAdaptiveConfigurationValid(codec_specific)) {
+        return true;
+      }
+      break;
     case CodecType::APTX_ADAPTIVE_LE:
     case CodecType::APTX_ADAPTIVE_LEX:
     case CodecType::LC3:

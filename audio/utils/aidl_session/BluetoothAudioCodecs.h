@@ -82,6 +82,8 @@ class BluetoothAudioCodecs {
       const CodecConfiguration::CodecSpecific& codec_specific);
   static bool IsOffloadOpusConfigurationValid(
       const CodecConfiguration::CodecSpecific& codec_specific);
+  static bool IsOffloadAptxAdaptiveConfigurationValid(
+      const CodecConfiguration::CodecSpecific& codec_specific);
 };
 
 }  // namespace audio
