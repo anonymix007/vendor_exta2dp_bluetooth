@@ -28,6 +28,6 @@ cc_library_shared {
         "libcutils",
         "libfmq",
         "liblog",
-        "libbluetooth_audio_session_aidl",
+        "libbluetooth_audio_session_aidl_qti",
     ],
 }

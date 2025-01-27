@@ -20,7 +20,7 @@ cc_library_shared {
         "libbinder_ndk",
         "vendor.qti.hardware.bluetooth.audio-V1-ndk",
         "android.hardware.bluetooth.audio-impl-qti",
-        "libbluetooth_audio_session_aidl",
+        "libbluetooth_audio_session_aidl_qti",
         "libcutils",
         "libfmq",
         "liblog",
