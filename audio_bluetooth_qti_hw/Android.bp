@@ -10,7 +10,6 @@ cc_library_shared {
     srcs: [
         "audio_bluetooth_hw.cc",
         "device_port_proxy.cc",
-        "device_port_proxy_hidl.cc",
         "stream_apis.cc",
         "utils.cc",
     ],
@@ -25,11 +24,6 @@ cc_library_shared {
         "libfmq",
         "liblog",
         "libutils",
-        // HIDL dependencies
-        "android.hardware.bluetooth.audio@2.0",
-        "android.hardware.bluetooth.audio@2.1",
-        "libbluetooth_audio_session",
-        "libhidlbase",
     ],
     cflags: [
         "-Wno-sign-compare",

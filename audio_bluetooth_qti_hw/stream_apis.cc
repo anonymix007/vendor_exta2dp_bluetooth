@@ -712,22 +712,9 @@ static void out_update_source_metadata_v7(
   }
   LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_->GetState()
                << ", " << source_metadata_v7->track_count << " track(s)";
-  if (!out->is_aidl) {
-    struct source_metadata source_metadata;
-    source_metadata.track_count = source_metadata_v7->track_count;
-    struct playback_track_metadata playback_track;
-    playback_track_metadata_from_v7(&playback_track,
-                                    source_metadata_v7->tracks);
-    source_metadata.tracks = &playback_track;
-
-    static_cast<::android::bluetooth::audio::hidl::BluetoothAudioPortHidl*>(
-        out->bluetooth_output_.get())
-        ->UpdateTracksMetadata(&source_metadata);
-  } else {
-    static_cast<::android::bluetooth::audio::aidl::BluetoothAudioPortAidl*>(
-        out->bluetooth_output_.get())
-        ->UpdateSourceMetadata(source_metadata_v7);
-  }
+  static_cast<::android::bluetooth::audio::aidl::BluetoothAudioPortAidl*>(
+      out->bluetooth_output_.get())
+      ->UpdateSourceMetadata(source_metadata_v7);
 }
 
 int adev_open_output_stream(struct audio_hw_device* dev,
@@ -738,16 +725,8 @@ int adev_open_output_stream(struct audio_hw_device* dev,
                             const char* address __unused) {
   *stream_out = nullptr;
   auto out = std::make_unique<BluetoothStreamOut>();
-  if (::aidl::android::hardware::bluetooth::audio::BluetoothAudioSession::
-          IsAidlAvailable()) {
-    out->bluetooth_output_ = std::make_unique<
-        ::android::bluetooth::audio::aidl::BluetoothAudioPortAidlOut>();
-    out->is_aidl = true;
-  } else {
-    out->bluetooth_output_ = std::make_unique<
-        ::android::bluetooth::audio::hidl::BluetoothAudioPortHidlOut>();
-    out->is_aidl = false;
-  }
+  out->bluetooth_output_ = std::make_unique<
+      ::android::bluetooth::audio::aidl::BluetoothAudioPortAidlOut>();
   if (!out->bluetooth_output_->SetUp(devices)) {
     out->bluetooth_output_ = nullptr;
     LOG(ERROR) << __func__ << ": cannot init HAL";
@@ -1232,11 +1211,6 @@ static void in_update_sink_metadata_v7(
   LOG(INFO) << __func__ << ": state=" << in->bluetooth_input_->GetState()
             << ", " << sink_metadata->track_count << " track(s)";
 
-  if (!in->is_aidl) {
-    LOG(WARNING) << __func__
-                 << " is only supported in AIDL but using HIDL now!";
-    return;
-  }
   static_cast<::android::bluetooth::audio::aidl::BluetoothAudioPortAidl*>(
       in->bluetooth_input_.get())
       ->UpdateSinkMetadata(sink_metadata);
@@ -1251,16 +1225,8 @@ int adev_open_input_stream(struct audio_hw_device* dev,
                            audio_source_t source __unused) {
   *stream_in = nullptr;
   auto in = std::make_unique<BluetoothStreamIn>();
-  if (::aidl::android::hardware::bluetooth::audio::BluetoothAudioSession::
-          IsAidlAvailable()) {
-    in->bluetooth_input_ = std::make_unique<
-        ::android::bluetooth::audio::aidl::BluetoothAudioPortAidlIn>();
-    in->is_aidl = true;
-  } else {
-    in->bluetooth_input_ = std::make_unique<
-        ::android::bluetooth::audio::hidl::BluetoothAudioPortHidlIn>();
-    in->is_aidl = false;
-  }
+  in->bluetooth_input_ = std::make_unique<
+      ::android::bluetooth::audio::aidl::BluetoothAudioPortAidlIn>();
   if (!in->bluetooth_input_->SetUp(devices)) {
     in->bluetooth_input_ = nullptr;
     LOG(ERROR) << __func__ << ": cannot init HAL";
