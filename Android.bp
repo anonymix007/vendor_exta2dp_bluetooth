@@ -1,0 +1,13 @@
+cc_defaults {
+    name: "exta2dp_cflags",
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        // Override global.go that demote the error to a warning
+        "-Werror=format",
+        "-Werror=reorder-init-list",
+    ],
+    c_std: "c99",
+    cpp_std: "c++20",
+}
