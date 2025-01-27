@@ -5,7 +5,6 @@ cc_library_shared {
     srcs: [
         "aidl_session/BluetoothAudioCodecs.cpp",
         "aidl_session/BluetoothAudioSession.cpp",
-        "aidl_session/HidlToAidlMiddleware.cpp",
         "aidl_session/BluetoothLeAudioCodecsProvider.cpp",
         "aidl_session/BluetoothHfpCodecsProvider.cpp",
         "aidl_session/BluetoothLeAudioAseConfigurationSettingProvider.cpp",
@@ -20,8 +19,6 @@ cc_library_shared {
         "latest_android_hardware_bluetooth_audio_ndk_shared",
     ],
     shared_libs: [
-        "android.hardware.bluetooth.audio@2.0",
-        "android.hardware.bluetooth.audio@2.1",
         "libbase",
         "libcutils",
         "libbinder_ndk",
