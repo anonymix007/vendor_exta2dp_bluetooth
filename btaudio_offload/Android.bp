@@ -1,0 +1,37 @@
+cc_library_shared {
+    name: "btaudio_offload_if",
+    vendor: true,
+    proprietary: true,
+    defaults: [
+        "exta2dp_cflags",
+        "latest_android_hardware_audio_common_ndk_shared",
+        "latest_android_hardware_bluetooth_audio_ndk_shared",
+    ],
+    srcs: [
+        "btaudio_offload.cpp",
+        "audio_stream.cpp",
+        "codec_parser.cpp",
+    ],
+    header_libs: [
+        "libhardware_headers",
+        "pal_codec_headers",
+    ],
+    shared_libs: [
+        "libbase",
+        "libcutils",
+        "libfmq",
+        "libhidlbase",
+        "liblog",
+        "libutils",
+        "libbinder_ndk",
+        "libbluetooth_audio_session_aidl_qti",
+        "vendor.qti.hardware.bluetooth.audio-V1-ndk",
+        "android.hardware.bluetooth.audio-impl-qti",
+    ],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wno-unused-parameter",
+    ],
+    cpp_std: "c++23",
+}
